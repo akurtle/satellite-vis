@@ -1,8 +1,6 @@
-import React from 'react'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Button } from '@mui/material';
 import { ShootingStars } from './ui/shadcn-io/shooting-stars';
-import StarBackground from './StarsBg';
 
 function Banner() {
     const text = ["A", "Stunning", "Satellite", "Visualizer"]

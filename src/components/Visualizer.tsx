@@ -3,12 +3,10 @@
 // Install with: npm i react-leaflet leaflet satellite.js
 
 import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from 'react-leaflet';
-import L, { LatLngBounds } from 'leaflet';
+import { MapContainer, TileLayer, Popup, CircleMarker } from 'react-leaflet';
+import L from 'leaflet';
 import * as satellite from 'satellite.js';
-import { Button, Grid, Input, Paper, Typography } from '@mui/material';
-import SearchBar from './Search';
-import SatelliteFilters from './Filters';
+import { Button, Input } from '@mui/material';
 
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: ('leaflet/dist/images/marker-icon-2x.png'),
@@ -61,7 +59,7 @@ function tleToLatLon(tle: any, date = new Date()) {
     }
 }
 
-export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle', refreshMs = 2000, maxSatellites = 200 }) {
+export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle', refreshMs = 20000000, maxSatellites = 200 }) {
     type TleSet = { name: string; line1: string; line2: string };
 
     type Positions = { name: string; lat: number; lon: number; heightKm: number; }
@@ -76,7 +74,7 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
     const map = useRef<L.Map | null>(null);
 
 
-    const [selected, setSelected] = useState<any | null>(null);
+    const [activeIndex, setActiveIndex] = useState(0);
 
     const [inputValue, setNewValue] = useState<RequestInfo>(newTleUrl);
 
@@ -213,11 +211,7 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
 
         const ok = await tleUrlCheck(url);
 
-        console.log(ok)
 
-        console.log(url)
-
-        console.log(inputValue);
 
         if (ok) {
             setTleUrl(url);
@@ -232,19 +226,45 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
         console.log(event.target.value)
     };
 
+    const satellite_data_links = [
+        ["100 (or so) Brightest", "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"],
+        ["Last 30 Days' Launches", "https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=tle"],
+        ["Space Stations", "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"],
+        ["Active Satellites","https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle"]
+    ]
+
+    const handleLinkChange = (index: number, link: string) => {
+        setActiveIndex(index);
+        setNewValue(link);
+        handleApplyUrl(link);
+        console.log("Selected link:", link);
+    };
+
 
     return (
         <div className="w-full h-fit flex flex-col  bg-[#003566]" id='visualizer'>
-
-
-            <header className='flex p-[2%] mt-[2%] bg-[#001219]/90 backdrop-blur-md justify-around items-center '>
-                <div className='text-white'>
-                    Current URL: {newTleUrl.toString()}
+            <header className='flex p-[2%] mt-[2%] bg-[#001219] backdrop-blur-md justify-around items-center '>
+                <div className='text-white flex gap-3'>
+                    {satellite_data_links.map(([label, link], i) => (
+                        <div key={i}>
+                            <Button
+                                onClick={() => handleLinkChange(i, link)}
+                                className={`rounded-3xl! px-4 py-2 bg-amber-400! hover:bg-amber-400!
+                                    ${activeIndex === i
+                                        ? 'bg-amber-600! text-white! shadow-lg scale-105'
+                                        : ' text-black hover:bg-amber-300'}
+                                        
+                                        `}
+                            >
+                                {label}
+                            </Button>
+                        </div>
+                    ))}
                 </div>
                 <div className='flex gap-3'>
                     <Input className='px-3  bg-white w-[500px] rounded-3xl after:content-[""] after:absolute after:inset-0
                     after:rounded-3xl after:border-2 
-                    after:border-amber-600 ' onChange={handleChange}></Input>
+                    after:border-amber-600 ' placeholder='Input TLE url' onChange={handleChange}></Input>
                     <div className='bg-[#0A9396] hover:bg-[#94D2BD] text-black rounded-3xl transition'>
                         <Button onClick={() => (handleApplyUrl(inputValue.toString()))} className='text-black!'>Search</Button>
                     </div>
@@ -264,7 +284,9 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
                         />
 
                         {satPositions.map((s, i) => (
-                            <CircleMarker key={`${s.name}-${i}`} center={[s.lat, s.lon]} radius={calcRadiusSize(s.heightKm)} pane="markerPane" color={getColorofCircle(s.heightKm)} >
+                            <CircleMarker key={`${s.name}-${i}`}
+                                center={[s.lat, s.lon]}
+                                radius={calcRadiusSize(s.heightKm)} pane="markerPane" color={getColorofCircle(s.heightKm)} >
                                 <Popup >
                                     <div className="max-w-xs">
                                         <strong>{s.name}</strong>
@@ -278,9 +300,9 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
                     </MapContainer>
                 </div>
                 <aside className="col-span-1 bg-white h-screen rounded-2xl shadow p-4 overflow-auto">
-                    <div className='flex'>
+                    <div className='flex p-3 gap-2'>
                         <h2 className="font-semibold ">Satellites ({satPositions.length})</h2>
-                        <SearchBar data={satPositions} onSelect={setSelected} />
+                        {/* <SearchBar data={satPositions} onSelect={setSelected} /> */}
 
                     </div>
                     {loading && <div className="text-sm text-slate-500">Loading TLE data...</div>}

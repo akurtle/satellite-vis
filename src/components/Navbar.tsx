@@ -1,13 +1,11 @@
-import * as React from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import { createTheme, ThemeProvider } from '@mui/material';
-import { green, orange, red } from '@mui/material/colors';
+import { green } from '@mui/material/colors';
 
 export default function Navbar() {
     const theme = createTheme({
