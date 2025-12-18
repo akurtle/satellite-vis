@@ -7,6 +7,8 @@ import { MapContainer, TileLayer, Popup, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import * as satellite from 'satellite.js';
 import { Button, Input } from '@mui/material';
+import { calcRadiusSize, focusOnMarker, getColorofCircle, isValidUrl } from './HelperFunctions';
+import SubHeader from './SubHeader';
 
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: ('leaflet/dist/images/marker-icon-2x.png'),
@@ -59,6 +61,13 @@ function tleToLatLon(tle: any, date = new Date()) {
     }
 }
 
+  export const satellite_data_links = [
+        ["100 (or so) Brightest", "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"],
+        ["Last 30 Days' Launches", "https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=tle"],
+        ["Space Stations", "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"],
+        ["Active Satellites","https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle"]
+    ]
+
 export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle', refreshMs = 20000000, maxSatellites = 200 }) {
     type TleSet = { name: string; line1: string; line2: string };
 
@@ -88,7 +97,7 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
             setLoading(true);
             console.log(newTleUrl)
             try {
-                const res = await fetch(newTleUrl);
+                const res = await fetch(`/api/tle?url=${newTleUrl}`);
                 const text = await res.text();
                 if (cancelled) return;
                 const sets = parseTLEText(text).slice(0, maxSatellites);
@@ -119,63 +128,13 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
         }
 
         updatePositions();
-        timerRef.current = setInterval(updatePositions, refreshMs);
-        return () => clearInterval(timerRef.current!);
+        timerRef.current = window.setInterval(updatePositions, refreshMs);
+        return () => {
+            if (timerRef.current != null) {
+                clearInterval(timerRef.current);
+            }
+        };
     }, [tleSets, refreshMs]);
-
-
-    // useEffect(() => {
-    //     const leafletMap = map.current;
-    //     const worldBounds = new LatLngBounds([-88, -180], [88, 180]);
-
-    //     if (leafletMap == null) return
-
-    //     leafletMap.on('drag', () => {
-    //         leafletMap.panInsideBounds(worldBounds, { animate: false });
-    //     });
-
-    // }, [map]);
-
-    // let center = [0, 0]
-
-    function focusOnMarker(lat: any, lang: any) {
-
-        map.current?.flyTo([lat, lang], 5);
-
-    }
-
-    function calcRadiusSize(size: number) {
-        const minRadius = 2;
-        const maxRadius = 15;
-        const maxDistance = 40000; // 40,000 km (roughly GEO orbit)
-        const minDistance = 200;   // 200 km (LEO)
-
-        // Normalizing the distance
-        const normalized = Math.min(Math.max((size - minDistance) / (maxDistance - minDistance), 0), 1);
-
-        // Invert so closer = larger
-        const radius = maxRadius - normalized * (maxRadius - minRadius);
-
-        return radius;
-    }
-
-    function getColorofCircle(size: number) {
-        if (size > 1000) {
-            return 'red';
-        } else {
-            return 'blue';
-        }
-    }
-
-    function isValidUrl(url: string): boolean {
-        try {
-            new URL(url);
-            return true;
-        } catch {
-            return false;
-        }
-    }
-
 
     async function tleUrlCheck(url: string) {
         if (!isValidUrl(url)) {
@@ -226,12 +185,7 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
         console.log(event.target.value)
     };
 
-    const satellite_data_links = [
-        ["100 (or so) Brightest", "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"],
-        ["Last 30 Days' Launches", "https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=tle"],
-        ["Space Stations", "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"],
-        ["Active Satellites","https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle"]
-    ]
+ 
 
     const handleLinkChange = (index: number, link: string) => {
         setActiveIndex(index);
@@ -241,85 +195,148 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
     };
 
 
-    return (
-        <div className="w-full h-fit flex flex-col  bg-[#003566]" id='visualizer'>
-            <header className='flex p-[2%] mt-[2%] bg-[#001219] backdrop-blur-md justify-around items-center '>
-                <div className='text-white flex gap-3'>
-                    {satellite_data_links.map(([label, link], i) => (
-                        <div key={i}>
-                            <Button
-                                onClick={() => handleLinkChange(i, link)}
-                                className={`rounded-3xl! px-4 py-2 bg-amber-400! hover:bg-amber-400!
-                                    ${activeIndex === i
-                                        ? 'bg-amber-600! text-white! shadow-lg scale-105'
-                                        : ' text-black hover:bg-amber-300'}
-                                        
-                                        `}
-                            >
-                                {label}
-                            </Button>
-                        </div>
-                    ))}
-                </div>
-                <div className='flex gap-3'>
-                    <Input className='px-3  bg-white w-[500px] rounded-3xl after:content-[""] after:absolute after:inset-0
-                    after:rounded-3xl after:border-2 
-                    after:border-amber-600 ' placeholder='Input TLE url' onChange={handleChange}></Input>
-                    <div className='bg-[#0A9396] hover:bg-[#94D2BD] text-black rounded-3xl transition'>
-                        <Button onClick={() => (handleApplyUrl(inputValue.toString()))} className='text-black!'>Search</Button>
-                    </div>
-                </div>
-            </header>
+return (
+  <div
+    className="
+      w-full min-h-screen flex flex-col
+      bg-linear-to-t from-[#001219] via-[#003566] to-[#0A9396]
+      text-white
+    "
+    id="visualizer"
+  >
+
+    <SubHeader  
+      handleLinkChange={handleLinkChange}
+      activeIndex={activeIndex}
+      handleChange={handleChange}
+      handleApplyUrl={handleApplyUrl}
+      inputValue={inputValue}
+    />
 
 
-            {/* <SatelliteFilters data={filtered} onFilterChange={setFiltered} /> */}
-            <div className="flex-1 grid grid-cols-4 gap-4 p-4">
-                <div className="col-span-3 bg-white rounded-2xl shadow p-2">
-                    <MapContainer center={center} zoom={2} style={{ height: '100%', borderRadius: 12 }} ref={map} bounds={bounds} maxBounds={bounds}>
-                        <TileLayer
-                            attribution='&copy; OpenStreetMap contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            noWrap={true}
+    <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4">
+      <div
+        className="
+          lg:col-span-3
+          rounded-3xl
+          border border-white/10
+          bg-white/5 backdrop-blur-xl
+          shadow-[0_15px_60px_rgba(0,0,0,0.35)]
+          overflow-hidden
+        "
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div className="flex flex-col">
+            <span className="text-sm text-white/70">Live positions</span>
+            <span className="text-lg font-semibold">Satellite Visualizer</span>
+          </div>
 
-                        />
-
-                        {satPositions.map((s, i) => (
-                            <CircleMarker key={`${s.name}-${i}`}
-                                center={[s.lat, s.lon]}
-                                radius={calcRadiusSize(s.heightKm)} pane="markerPane" color={getColorofCircle(s.heightKm)} >
-                                <Popup >
-                                    <div className="max-w-xs">
-                                        <strong>{s.name}</strong>
-                                        <div>Lat: {s.lat.toFixed(4)}</div>
-                                        <div>Lon: {s.lon.toFixed(4)}</div>
-                                        <div>Altitude: {s.heightKm.toFixed(1)} km</div>
-                                    </div>
-                                </Popup>
-                            </CircleMarker>
-                        ))}
-                    </MapContainer>
-                </div>
-                <aside className="col-span-1 bg-white h-screen rounded-2xl shadow p-4 overflow-auto">
-                    <div className='flex p-3 gap-2'>
-                        <h2 className="font-semibold ">Satellites ({satPositions.length})</h2>
-                        {/* <SearchBar data={satPositions} onSelect={setSelected} /> */}
-
-                    </div>
-                    {loading && <div className="text-sm text-slate-500">Loading TLE data...</div>}
-                    <ul className="text-sm space-y-2  overflow-visible">
-                        {satPositions.map((s, i) => (
-                            <li key={i} className="p-2 border rounded hover:border-amber-600 hover:bg-amber-200" onClick={() => focusOnMarker(s.lat, s.lon)}>
-                                <div className="font-medium truncate">{s.name}</div>
-                                <div className="text-xs opacity-75">{s.lat.toFixed(3)}, {s.lon.toFixed(3)} — {s.heightKm.toFixed(1)} km</div>
-                            </li>
-                        ))}
-
-
-                    </ul>
-                </aside>
-            </div>
+          <div className="text-sm text-white/70">
+            Showing <span className="text-white font-semibold">{satPositions.length}</span>
+          </div>
         </div>
-    );
+        <div className="h-[70vh] lg:h-[calc(100vh-180px)] p-3">
+          <div className="h-full rounded-2xl overflow-hidden border border-white/10">
+            <MapContainer
+              center={center}
+              zoom={2}
+              style={{ height: "100%", borderRadius: 16 }}
+              ref={map}
+              bounds={bounds}
+              maxBounds={bounds}
+            >
+              <TileLayer
+                attribution="&copy; OpenStreetMap contributors"
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                noWrap={true}
+              />
+
+              {satPositions.map((s, i) => (
+                <CircleMarker
+                  key={`${s.name}-${i}`}
+                  center={[s.lat, s.lon]}
+                  radius={calcRadiusSize(s.heightKm)}
+                  pane="markerPane"
+                  color={getColorofCircle(s.heightKm)}
+                >
+                  <Popup>
+                    <div className="max-w-xs">
+                      <strong>{s.name}</strong>
+                      <div>Lat: {s.lat.toFixed(4)}</div>
+                      <div>Lon: {s.lon.toFixed(4)}</div>
+                      <div>Altitude: {s.heightKm.toFixed(1)} km</div>
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              ))}
+            </MapContainer>
+          </div>
+        </div>
+      </div>
+
+      <aside
+        className="
+          lg:col-span-1
+          rounded-3xl
+          border border-white/10
+          bg-white/5 backdrop-blur-xl
+          shadow-[0_15px_60px_rgba(0,0,0,0.35)]
+          overflow-hidden
+        "
+      >
+        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <div>
+            <div className="text-sm text-white/70">List</div>
+            <h2 className="text-lg font-semibold">
+              Satellites <span className="text-white/70">({satPositions.length})</span>
+            </h2>
+          </div>
+
+          {loading && (
+            <div className="text-xs text-white/70 rounded-full px-3 py-1 bg-white/10 border border-white/10">
+              Loading…
+            </div>
+          )}
+        </div>
+
+        <div className="p-3 h-[70vh] lg:h-[calc(100vh-180px)] overflow-auto">
+          <ul className="space-y-2">
+            {satPositions.map((s, i) => (
+              <li
+                key={i}
+                onClick={() => focusOnMarker(s.lat, s.lon,map)}
+                className="
+                  group cursor-pointer
+                  rounded-2xl p-3
+                  border border-white/10
+                  bg-white/5
+                  hover:bg-amber-400/15 hover:border-amber-400/40
+                  transition
+                "
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold truncate text-white group-hover:text-amber-200">
+                      {s.name}
+                    </div>
+                    <div className="text-xs text-white/70">
+                      {s.lat.toFixed(3)}, {s.lon.toFixed(3)} — {s.heightKm.toFixed(1)} km
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 text-[11px] px-2 py-1 rounded-full bg-white/10 border border-white/10 text-white/80">
+                    focus
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+);
+
 }
 
 //           {/* {filtered.map((sat, i) => (
