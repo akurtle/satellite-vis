@@ -1,12 +1,7 @@
-// SatelliteVisualizer.jsx
-// Requires: react, react-dom, react-leaflet, leaflet, satellite.js, tailwindcss
-// Install with: npm i react-leaflet leaflet satellite.js
-
 import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Popup, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import * as satellite from 'satellite.js';
-import { Button, Input } from '@mui/material';
 import { calcRadiusSize, focusOnMarker, getColorofCircle, isValidUrl } from './HelperFunctions';
 import SubHeader from './SubHeader';
 

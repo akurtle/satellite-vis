@@ -1,5 +1,4 @@
 import { Button, Input } from '@mui/material'
-import React from 'react'
 import { satellite_data_links } from './Visualizer'
 
 
