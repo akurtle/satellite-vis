@@ -93,7 +93,7 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
             try {
 
 
-                const res = await fetch(`/api/tle?url=${newTleUrl}`);
+                const res = await fetch(`/api/tle?url=${encodeURIComponent(newTleUrl.toString())}`);
                 const text = await res.text();
                 console.log(text)
                 if (cancelled) return;
