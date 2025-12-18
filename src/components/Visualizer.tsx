@@ -56,12 +56,12 @@ function tleToLatLon(tle: any, date = new Date()) {
     }
 }
 
-  export const satellite_data_links = [
-        ["100 (or so) Brightest", "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"],
-        ["Last 30 Days' Launches", "https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=tle"],
-        ["Space Stations", "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"],
-        ["Active Satellites","https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle"]
-    ]
+export const satellite_data_links = [
+    ["100 (or so) Brightest", "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"],
+    ["Last 30 Days' Launches", "https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=tle"],
+    ["Space Stations", "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"],
+    ["Active Satellites", "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle"]
+]
 
 export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle', refreshMs = 20000000, maxSatellites = 200 }) {
     type TleSet = { name: string; line1: string; line2: string };
@@ -94,8 +94,17 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
 
 
                 const res = await fetch(`/api/tle?url=${encodeURIComponent(newTleUrl.toString())}`);
-                const text = await res.text();
-                console.log(text)
+
+
+                const { tleText, source } = await res.json() as {
+                    tleText: string;
+                    source: "cache" | "origin";
+                };
+
+
+                const text = tleText;
+
+                console.log("TLE from:", source);
                 if (cancelled) return;
 
 
@@ -184,7 +193,7 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
         console.log(event.target.value)
     };
 
- 
+
 
     const handleLinkChange = (index: number, link: string) => {
         setActiveIndex(index);
@@ -194,28 +203,28 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
     };
 
 
-return (
-  <div
-    className="
+    return (
+        <div
+            className="
       w-full min-h-screen flex flex-col
       bg-linear-to-t from-[#001219] via-[#003566] to-[#0A9396]
       text-white
     "
-    id="visualizer"
-  >
+            id="visualizer"
+        >
 
-    <SubHeader  
-      handleLinkChange={handleLinkChange}
-      activeIndex={activeIndex}
-      handleChange={handleChange}
-      handleApplyUrl={handleApplyUrl}
-      inputValue={inputValue}
-    />
+            <SubHeader
+                handleLinkChange={handleLinkChange}
+                activeIndex={activeIndex}
+                handleChange={handleChange}
+                handleApplyUrl={handleApplyUrl}
+                inputValue={inputValue}
+            />
 
 
-    <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4">
-      <div
-        className="
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4">
+                <div
+                    className="
           lg:col-span-3
           rounded-3xl
           border border-white/10
@@ -223,58 +232,58 @@ return (
           shadow-[0_15px_60px_rgba(0,0,0,0.35)]
           overflow-hidden
         "
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-          <div className="flex flex-col">
-            <span className="text-sm text-white/70">Live positions</span>
-            <span className="text-lg font-semibold">Satellite Visualizer</span>
-          </div>
-
-          <div className="text-sm text-white/70">
-            Showing <span className="text-white font-semibold">{satPositions.length}</span>
-          </div>
-        </div>
-        <div className="h-[70vh] lg:h-[calc(100vh-180px)] p-3">
-          <div className="h-full rounded-2xl overflow-hidden border border-white/10">
-            <MapContainer
-              center={center}
-              zoom={2}
-              style={{ height: "100%", borderRadius: 16 }}
-              ref={map}
-              bounds={bounds}
-              maxBounds={bounds}
-            >
-              <TileLayer
-                attribution="&copy; OpenStreetMap contributors"
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                noWrap={true}
-              />
-
-              {satPositions.map((s, i) => (
-                <CircleMarker
-                  key={`${s.name}-${i}`}
-                  center={[s.lat, s.lon]}
-                  radius={calcRadiusSize(s.heightKm)}
-                  pane="markerPane"
-                  color={getColorofCircle(s.heightKm)}
                 >
-                  <Popup>
-                    <div className="max-w-xs">
-                      <strong>{s.name}</strong>
-                      <div>Lat: {s.lat.toFixed(4)}</div>
-                      <div>Lon: {s.lon.toFixed(4)}</div>
-                      <div>Altitude: {s.heightKm.toFixed(1)} km</div>
-                    </div>
-                  </Popup>
-                </CircleMarker>
-              ))}
-            </MapContainer>
-          </div>
-        </div>
-      </div>
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+                        <div className="flex flex-col">
+                            <span className="text-sm text-white/70">Live positions</span>
+                            <span className="text-lg font-semibold">Satellite Visualizer</span>
+                        </div>
 
-      <aside
-        className="
+                        <div className="text-sm text-white/70">
+                            Showing <span className="text-white font-semibold">{satPositions.length}</span>
+                        </div>
+                    </div>
+                    <div className="h-[70vh] lg:h-[calc(100vh-180px)] p-3">
+                        <div className="h-full rounded-2xl overflow-hidden border border-white/10">
+                            <MapContainer
+                                center={center}
+                                zoom={2}
+                                style={{ height: "100%", borderRadius: 16 }}
+                                ref={map}
+                                bounds={bounds}
+                                maxBounds={bounds}
+                            >
+                                <TileLayer
+                                    attribution="&copy; OpenStreetMap contributors"
+                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                    noWrap={true}
+                                />
+
+                                {satPositions.map((s, i) => (
+                                    <CircleMarker
+                                        key={`${s.name}-${i}`}
+                                        center={[s.lat, s.lon]}
+                                        radius={calcRadiusSize(s.heightKm)}
+                                        pane="markerPane"
+                                        color={getColorofCircle(s.heightKm)}
+                                    >
+                                        <Popup>
+                                            <div className="max-w-xs">
+                                                <strong>{s.name}</strong>
+                                                <div>Lat: {s.lat.toFixed(4)}</div>
+                                                <div>Lon: {s.lon.toFixed(4)}</div>
+                                                <div>Altitude: {s.heightKm.toFixed(1)} km</div>
+                                            </div>
+                                        </Popup>
+                                    </CircleMarker>
+                                ))}
+                            </MapContainer>
+                        </div>
+                    </div>
+                </div>
+
+                <aside
+                    className="
           lg:col-span-1
           rounded-3xl
           border border-white/10
@@ -282,29 +291,29 @@ return (
           shadow-[0_15px_60px_rgba(0,0,0,0.35)]
           overflow-hidden
         "
-      >
-        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-          <div>
-            <div className="text-sm text-white/70">List</div>
-            <h2 className="text-lg font-semibold">
-              Satellites <span className="text-white/70">({satPositions.length})</span>
-            </h2>
-          </div>
+                >
+                    <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+                        <div>
+                            <div className="text-sm text-white/70">List</div>
+                            <h2 className="text-lg font-semibold">
+                                Satellites <span className="text-white/70">({satPositions.length})</span>
+                            </h2>
+                        </div>
 
-          {loading && (
-            <div className="text-xs text-white/70 rounded-full px-3 py-1 bg-white/10 border border-white/10">
-              Loading…
-            </div>
-          )}
-        </div>
+                        {loading && (
+                            <div className="text-xs text-white/70 rounded-full px-3 py-1 bg-white/10 border border-white/10">
+                                Loading…
+                            </div>
+                        )}
+                    </div>
 
-        <div className="p-3 h-[70vh] lg:h-[calc(100vh-180px)] overflow-auto">
-          <ul className="space-y-2">
-            {satPositions.map((s, i) => (
-              <li
-                key={i}
-                onClick={() => focusOnMarker(s.lat, s.lon,map)}
-                className="
+                    <div className="p-3 h-[70vh] lg:h-[calc(100vh-180px)] overflow-auto">
+                        <ul className="space-y-2">
+                            {satPositions.map((s, i) => (
+                                <li
+                                    key={i}
+                                    onClick={() => focusOnMarker(s.lat, s.lon, map)}
+                                    className="
                   group cursor-pointer
                   rounded-2xl p-3
                   border border-white/10
@@ -312,29 +321,29 @@ return (
                   hover:bg-amber-400/15 hover:border-amber-400/40
                   transition
                 "
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="font-semibold truncate text-white group-hover:text-amber-200">
-                      {s.name}
-                    </div>
-                    <div className="text-xs text-white/70">
-                      {s.lat.toFixed(3)}, {s.lon.toFixed(3)} — {s.heightKm.toFixed(1)} km
-                    </div>
-                  </div>
+                                >
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <div className="font-semibold truncate text-white group-hover:text-amber-200">
+                                                {s.name}
+                                            </div>
+                                            <div className="text-xs text-white/70">
+                                                {s.lat.toFixed(3)}, {s.lon.toFixed(3)} — {s.heightKm.toFixed(1)} km
+                                            </div>
+                                        </div>
 
-                  <div className="shrink-0 text-[11px] px-2 py-1 rounded-full bg-white/10 border border-white/10 text-white/80">
-                    focus
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                                        <div className="shrink-0 text-[11px] px-2 py-1 rounded-full bg-white/10 border border-white/10 text-white/80">
+                                            focus
+                                        </div>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </aside>
+            </div>
         </div>
-      </aside>
-    </div>
-  </div>
-);
+    );
 
 }
 
