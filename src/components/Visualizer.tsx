@@ -90,11 +90,15 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
         let cancelled = false;
         async function fetchTLE() {
             setLoading(true);
-            console.log(newTleUrl)
             try {
+
+
                 const res = await fetch(`/api/tle?url=${newTleUrl}`);
                 const text = await res.text();
+                console.log(text)
                 if (cancelled) return;
+
+
                 const sets = parseTLEText(text).slice(0, maxSatellites);
                 setTleSets(sets);
             } catch (e) {
