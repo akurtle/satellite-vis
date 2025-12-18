@@ -182,7 +182,7 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
 
         if (ok) {
             setTleUrl(url);
-            console.log(newTleUrl)
+            // console.log(newTleUrl)
         } else {
             console.log("error")
         }
@@ -190,7 +190,7 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setNewValue(event.target.value);
-        console.log(event.target.value)
+        // console.log(event.target.value)
     };
 
 
@@ -199,7 +199,7 @@ export default function SatelliteVisualizer({ tleUrl = 'https://celestrak.org/NO
         setActiveIndex(index);
         setNewValue(link);
         handleApplyUrl(link);
-        console.log("Selected link:", link);
+        // console.log("Selected link:", link);
     };
 
 
